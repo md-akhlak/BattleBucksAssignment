@@ -113,10 +113,6 @@ struct PostDetailView: View {
                     // Additional info card
                     VStack(alignment: .leading, spacing: 16) {
                         HStack {
-                            Image(systemName: "info.circle")
-                                .font(.system(size: 18, weight: .medium))
-                                .foregroundColor(.blue)
-                            
                             Text("Post Information")
                                 .font(.system(size: 18, weight: .semibold))
                                 .foregroundColor(.primary)
@@ -167,10 +163,5 @@ struct PostDetailView: View {
             isFavorite = viewModel.isFavorite(post)
         }
     }
-}
-
-#Preview {
-    PostDetailView(post: Post(userId: 1, id: 1, title: "Sample Post Title", body: "This is a sample post body content that demonstrates how the detail view will look with longer text content."))
-        .environmentObject(PostsViewModel())
 }
 

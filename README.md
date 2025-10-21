@@ -1,38 +1,54 @@
 # BattleBucks Assignment - SwiftUI Posts App
 
-A modern SwiftUI application built with MVVM architecture that fetches and displays posts from JSONPlaceholder API, featuring an Airbnb-style card layout, search functionality, and favorites management.
+A SwiftUI application that fetches posts from JSONPlaceholder API and allows users to view, search, and manage favorite posts.
 
 ## 📱 Features
 
-- **Modern UI**: Airbnb-style card layout with rounded corners and subtle shadows
+- **Post List**: Display all posts with title and userId
 - **Search**: Real-time search functionality to filter posts by title
-- **Favorites**: Heart icon to toggle favorite posts with persistent state
-- **Navigation**: Tab-based navigation between "All Posts" and "Favorites"
-- **Detail View**: Full-screen post details with favorite toggle
-- **Loading States**: Loading indicators and error handling
+- **Favorites**: Heart icon to mark/unmark posts as favorite
+- **Detail View**: Navigate to post details with full content
+- **Favorites Tab**: Dedicated tab for favorite posts
+- **Loading States**: Loading indicators while fetching posts
+- **Error Handling**: Network failure handling with retry option
 - **Pull-to-Refresh**: Swipe down to refresh posts
-- **Responsive Design**: Grid layout that adapts to different screen sizes
 
 ## 🏗️ Architecture
 
 This app follows the **MVVM (Model-View-ViewModel)** pattern:
 
-- **Model**: `Post` struct with Codable conformance
+- **Model**: `Post` struct with Codable conformance for API data
 - **View**: SwiftUI views (`PostsListView`, `PostDetailView`, `FavoritesView`)
 - **ViewModel**: `PostsViewModel` managing state and business logic
-- **Service**: `NetworkService` for API communication
+- **Service**: `NetworkService` for API communication (separated from View)
 
-## 🛠️ Setup Instructions
+## 🛠️ Project Setup Instructions
 
 ### Prerequisites
 - **iOS**: 15.0+
 - **Xcode**: 14.0+
 - **Swift**: 5.7+
 
-### Installation
-1. Clone the repository
-2. Open `BattleBucksAssignment.xcodeproj` in Xcode
-3. Build and run the project (⌘+R)
+### Installation Steps
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/yourusername/BattleBucksAssignment.git
+   cd BattleBucksAssignment
+   ```
+
+2. **Open the project in Xcode**
+   - Open `BattleBucksAssignment.xcodeproj` in Xcode
+   - Wait for Xcode to resolve dependencies
+
+3. **Build and run the project**
+   - Select your target device or simulator
+   - Press ⌘+R or click the "Run" button
+   - The app will build and launch automatically
+
+### Project Configuration
+- **Deployment Target**: iOS 15.0
+- **Swift Version**: 5.7
+- **No additional dependencies required** - uses only SwiftUI and Foundation frameworks
 
 ### Project Structure
 ```
@@ -47,6 +63,8 @@ BattleBucksAssignment/
 │   ├── PostsListView.swift
 │   ├── PostDetailView.swift
 │   └── FavoritesView.swift
+├── Extension/
+│   └── Views.swift
 ├── ContentView.swift
 └── BattleBucksAssignmentApp.swift
 ```
@@ -71,10 +89,10 @@ struct Post: Codable, Identifiable, Hashable {
 ```
 
 #### NetworkService
-- Singleton pattern for shared instance
+- Handles all API communication
 - Async/await for modern concurrency
 - Comprehensive error handling
-- URLSession for network requests
+- Separated from View layer as per requirements
 
 #### PostsViewModel
 - `@Published` properties for reactive UI updates
@@ -82,38 +100,12 @@ struct Post: Codable, Identifiable, Hashable {
 - Computed properties for filtered posts
 - State management for loading and errors
 
-#### UI Features
-- **Airbnb-style Cards**: Rounded corners, shadows, grid layout
-- **Search Bar**: Real-time filtering with `@Published searchText`
-- **Heart Icons**: Animated favorite toggle with `withAnimation`
-- **Loading States**: Progress indicators and error messages
-- **Pull-to-Refresh**: Native SwiftUI `.refreshable` modifier
-
-## 🎨 Design System
-
-### Color Scheme
-- **Primary**: System colors for light/dark mode support
-- **Accent**: Red for heart icons and tab selection
-- **Background**: System grouped background for card separation
-
-### Typography
-- **Headlines**: Bold, large titles for post names
-- **Body**: Regular text for post content
-- **Captions**: Secondary text for metadata
-
-### Layout
-- **Grid**: 2-column responsive layout
-- **Spacing**: 16pt standard spacing
-- **Padding**: 20pt for content areas
-- **Corner Radius**: 16pt for cards, 12pt for search bar
-
-## 🚀 Features Breakdown
+## 🚀 Features Implementation
 
 ### 1. Post List Screen
-- Grid layout with Airbnb-style cards
-- Search bar with real-time filtering
-- Loading states and error handling
-- Pull-to-refresh functionality
+- Display posts in a List with title and userId
+- Heart icon to mark/unmark posts as favorite
+- Search TextField at the top for real-time filtering
 
 ### 2. Search Functionality
 - Real-time search as you type
@@ -121,67 +113,38 @@ struct Post: Codable, Identifiable, Hashable {
 - Maintains scroll position during search
 
 ### 3. Detail Screen
-- Full-screen post details
-- Shared ViewModel for favorite sync
+- Navigate to post details on tap
+- Show title (large text) and body (regular text)
 - Heart icon for favorite toggle
-- Clean, readable typography
 
 ### 4. Favorites Tab
-- Dedicated favorites view
-- Same card layout as main list
-- Empty state with helpful messaging
-- Persistent favorites across app sessions
+- Dedicated tab for favorite posts
+- Display all favorited posts
+- Same information as main list
 
 ### 5. Bonus Features
-- **Loading Indicators**: Spinner with descriptive text
-- **Error Handling**: User-friendly error messages with retry option
+- **Loading Indicators**: Show loading state while fetching posts
+- **Error Handling**: Handle network failures with retry option
 - **Pull-to-Refresh**: Native iOS gesture for data refresh
-- **Animations**: Smooth transitions for favorite toggles
 
-## 🔄 Data Flow
+## 🎯 Assumptions & Future Improvements
 
-1. **App Launch**: `PostsViewModel` fetches posts from API
-2. **User Interaction**: Search text updates filtered posts
-3. **Favorite Toggle**: Updates `favorites` Set, triggers UI refresh
-4. **Navigation**: Tab switching maintains state via `@EnvironmentObject`
-5. **Detail View**: Shares ViewModel for consistent favorite state
+### Assumptions Made
+- Used UserDefaults for persistent favorites storage
+- Implemented basic error handling for network failures
+- Added loading states for better user experience
+- Used modern SwiftUI patterns (async/await, @MainActor)
 
-## 🎯 Future Improvements
-
-### Potential Enhancements
-- **Images**: Add AsyncImage support for post thumbnails
+### Improvements with More Time
 - **Caching**: Implement local storage for offline support
 - **Pagination**: Load more posts as user scrolls
-- **Categories**: Filter posts by user or category
-- **Animations**: More sophisticated transition animations
-- **Accessibility**: VoiceOver and Dynamic Type support
+- **Images**: Add support for post thumbnails if API provided them
 - **Testing**: Unit tests for ViewModel and NetworkService
-
-### Performance Optimizations
-- **Lazy Loading**: Only load visible cards
-- **Image Caching**: Cache downloaded images
-- **Memory Management**: Proper cleanup of network requests
-- **Background Refresh**: Update data when app becomes active
-
-## 📱 Screenshots
-
-The app features:
-- Clean, modern interface inspired by Airbnb's design language
-- Intuitive navigation with tab-based structure
-- Responsive grid layout for optimal viewing
-- Smooth animations and transitions
-- Consistent visual hierarchy
-
-## 🤝 Contributing
-
-This project demonstrates:
-- Modern SwiftUI development practices
-- MVVM architecture implementation
-- Clean code organization
-- User experience best practices
-- iOS development standards
+- **Accessibility**: VoiceOver and Dynamic Type support
+- **Performance**: Lazy loading and memory optimization
+- **Animations**: More sophisticated transition animations
 
 ## 📄 License
 
-This project is created as part of the BattleBucks assignment and demonstrates modern iOS development practices with SwiftUI and MVVM architecture.
+This project is created as part of the BattleBucks assignment and demonstrates SwiftUI development with MVVM architecture.
 

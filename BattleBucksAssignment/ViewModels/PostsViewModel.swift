@@ -15,16 +15,10 @@ class PostsViewModel: ObservableObject {
     @Published var favorites: Set<Post> = []
     @Published var searchText: String = ""
     @Published var isLoading: Bool = false
-    @Published var isLoadingMore: Bool = false
+    @Published var isRefreshing: Bool = false
     @Published var errorMessage: String?
-    @Published var hasMorePosts: Bool = true
-    @Published var paginationError: String?
     
     private let networkService = NetworkService.shared
-    
-    private var currentPage: Int = 1
-    private let postsPerPage: Int = 10
-    private var isPaginationInProgress: Bool = false
     
     var filteredPosts: [Post] {
         if searchText.isEmpty {
@@ -41,53 +35,22 @@ class PostsViewModel: ObservableObject {
     }
     
     func fetchPosts() async {
+        print("🔄 fetchPosts() called - isLoading: \(isLoading)")
         isLoading = true
         errorMessage = nil
-        currentPage = 1
-        hasMorePosts = true
         
         do {
-            let fetchedPosts = try await networkService.fetchPosts(page: currentPage, limit: postsPerPage)
+            print("🌐 Fetching posts from API...")
+            let fetchedPosts = try await networkService.fetchAllPosts()
             posts = fetchedPosts
-            currentPage += 1
-            
-            // Check if we have more posts to load
-            if fetchedPosts.count < postsPerPage {
-                hasMorePosts = false
-            }
+            print("✅ Successfully fetched \(fetchedPosts.count) posts")
         } catch {
+            print("❌ Error fetching posts: \(error.localizedDescription)")
             errorMessage = error.localizedDescription
         }
         
         isLoading = false
-    }
-    
-    func loadMorePosts() async {
-        guard !isLoadingMore && !isPaginationInProgress && hasMorePosts else { return }
-        
-        isPaginationInProgress = true
-        isLoadingMore = true
-        paginationError = nil
-        
-        do {
-            let fetchedPosts = try await networkService.fetchPosts(page: currentPage, limit: postsPerPage)
-            posts.append(contentsOf: fetchedPosts)
-            currentPage += 1
-            
-            // Check if we have more posts to load
-            if fetchedPosts.count < postsPerPage {
-                hasMorePosts = false
-            }
-        } catch {
-            paginationError = error.localizedDescription
-        }
-        
-        isLoadingMore = false
-        isPaginationInProgress = false
-    }
-    
-    func retryPagination() async {
-        await loadMorePosts()
+        print("🏁 fetchPosts() completed - isLoading: \(isLoading)")
     }
     
     func toggleFavorite(for post: Post) {
@@ -105,18 +68,32 @@ class PostsViewModel: ObservableObject {
     }
     
     func refreshPosts() async {
-        await fetchPosts()
-    }
-    
-    func shouldLoadMore(for post: Post) -> Bool {
-        // Only trigger pagination if we're not searching and we have more posts
-        guard searchText.isEmpty && hasMorePosts && !isLoadingMore && !isPaginationInProgress else { return false }
+        print("🔄 refreshPosts() called - isRefreshing: \(isRefreshing)")
         
-        // Get the index of the current post in the filtered posts
-        guard let currentIndex = filteredPosts.firstIndex(where: { $0.id == post.id }) else { return false }
+        // Prevent multiple simultaneous refresh calls
+        guard !isRefreshing else {
+            print("⚠️ Refresh already in progress, ignoring duplicate call")
+            return
+        }
         
-        // Trigger pagination when we're 3 items away from the end
-        let triggerIndex = max(0, filteredPosts.count - 3)
-        return currentIndex >= triggerIndex
+        isRefreshing = true
+        errorMessage = nil
+        
+        do {
+            print("🌐 Refreshing posts from API...")
+            let fetchedPosts = try await networkService.fetchAllPosts()
+            posts = fetchedPosts
+            print("✅ Successfully refreshed \(fetchedPosts.count) posts")
+        } catch {
+            print("❌ Error refreshing posts: \(error.localizedDescription)")
+            // Only show error if it's not a cancellation
+            if !(error is CancellationError) && 
+               !error.localizedDescription.contains("cancelled") {
+                errorMessage = error.localizedDescription
+            }
+        }
+        
+        isRefreshing = false
+        print("🏁 refreshPosts() completed - isRefreshing: \(isRefreshing)")
     }
 }

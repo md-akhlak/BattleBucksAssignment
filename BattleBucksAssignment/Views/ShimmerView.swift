@@ -7,77 +7,103 @@
 
 import SwiftUI
 
-struct ShimmerView: View, ShapeStyle {
+// MARK: - Shimmer Modifier
+struct ShimmerModifier: ViewModifier {
     @State private var isAnimating = false
     
-    var body: some View {
-        Rectangle()
-            .fill(
+    init(isAnimating: Bool = true) {
+        self.isAnimating = isAnimating
+    }
+    
+    func body(content: Content) -> some View {
+        content
+            .overlay(
                 LinearGradient(
                     colors: [
-                        Color.gray.opacity(0.2),
-                        Color.gray.opacity(0.4),
-                        Color.gray.opacity(0.2)
+                        Color.clear,
+                        Color.white.opacity(0.6),
+                        Color.clear
                     ],
                     startPoint: .leading,
                     endPoint: .trailing
                 )
-            )
-            .mask(
-                Rectangle()
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                Color.clear,
-                                Color.white.opacity(0.8),
-                                Color.clear
-                            ],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
-                    .rotationEffect(.degrees(30))
-                    .offset(x: isAnimating ? 200 : -200)
+                .rotationEffect(.degrees(30))
+                .offset(x: isAnimating ? 200 : -200)
+                .animation(
+                    .linear(duration: 1.5)
+                    .repeatForever(autoreverses: false),
+                    value: isAnimating
+                )
             )
             .onAppear {
-                withAnimation(
-                    .linear(duration: 1.5)
-                    .repeatForever(autoreverses: false)
-                ) {
-                    isAnimating = true
+                if isAnimating {
+                    withAnimation(
+                        .linear(duration: 1.5)
+                        .repeatForever(autoreverses: false)
+                    ) {
+                        self.isAnimating = false
+                    }
                 }
             }
     }
 }
 
-struct ShimmerPostCard: View {
+
+// MARK: - Main Shimmer View
+struct ShimmerView: View {
+    var isAnimating: Bool = true
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Scrollable content
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 0) {
+                    // Posts List Section
+                    VStack(spacing: 12) {
+                        ForEach(0..<6, id: \.self) { _ in
+                            PostCardShimmerView(isAnimating: isAnimating)
+                        }
+                    }
+                    .padding(.top, 16)
+                    .padding(.horizontal, 20)
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Post Card Shimmer
+struct PostCardShimmerView: View {
+    var isAnimating: Bool = true
+    
     var body: some View {
         HStack(spacing: 16) {
             // Left side - Post icon and ID shimmer (matching PostCardView)
             VStack(spacing: 8) {
                 ZStack {
                     Circle()
-                        .fill(ShimmerView())
+                        .fill(Color.secondary.opacity(0.1))
                         .frame(width: 40, height: 40)
+                        .shimmer(isAnimating: isAnimating)
                 }
                 
-                Rectangle()
-                    .fill(ShimmerView())
+                RoundedRectangle(cornerRadius: 5)
+                    .fill(Color.secondary.opacity(0.1))
                     .frame(width: 20, height: 10)
-                    .cornerRadius(5)
+                    .shimmer(isAnimating: isAnimating)
             }
             
             // Center - Content shimmer (matching PostCardView)
             VStack(alignment: .leading, spacing: 8) {
-                Rectangle()
-                    .fill(ShimmerView())
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(Color.secondary.opacity(0.1))
                     .frame(height: 16)
-                    .cornerRadius(4)
+                    .shimmer(isAnimating: isAnimating)
                 
-                Rectangle()
-                    .fill(ShimmerView())
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(Color.secondary.opacity(0.1))
                     .frame(height: 14)
-                    .cornerRadius(4)
+                    .shimmer(isAnimating: isAnimating)
                     .frame(width: UIScreen.main.bounds.width * 0.6)
                 
                 Spacer()
@@ -87,8 +113,9 @@ struct ShimmerPostCard: View {
             // Right side - Favorite button shimmer (matching PostCardView)
             VStack {
                 Circle()
-                    .fill(ShimmerView())
+                    .fill(Color.secondary.opacity(0.1))
                     .frame(width: 40, height: 40)
+                    .shimmer(isAnimating: isAnimating)
                 
                 Spacer()
             }
@@ -105,38 +132,82 @@ struct ShimmerPostCard: View {
     }
 }
 
-struct ShimmerFavoriteCard: View {
+// MARK: - Favorites Shimmer Views
+struct FavoritesShimmerView: View {
+    var isAnimating: Bool = true
+    var selectedLayout: FavoritesView.LayoutType = .list
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Scrollable content
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 0) {
+                    if selectedLayout == .grid {
+                        // Grid layout shimmer
+                        LazyVGrid(columns: [
+                            GridItem(.flexible(), spacing: 16),
+                            GridItem(.flexible(), spacing: 16)
+                        ], spacing: 16) {
+                            ForEach(0..<10, id: \.self) { _ in
+                                FavoriteCardShimmerView(isAnimating: isAnimating)
+                            }
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.top, 24)
+                        .padding(.bottom, 100)
+                    } else {
+                        // List layout shimmer
+                        LazyVStack(spacing: 16) {
+                            ForEach(0..<10, id: \.self) { _ in
+                                FavoriteListItemShimmerView(isAnimating: isAnimating)
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.top, 24)
+                        .padding(.bottom, 100)
+                    }
+                }
+            }
+        }
+    }
+}
+
+struct FavoriteCardShimmerView: View {
+    var isAnimating: Bool = true
+    
     var body: some View {
         VStack(spacing: 12) {
             // Top section with user info and favorite button
             HStack {
                 Circle()
-                    .fill(ShimmerView())
+                    .fill(Color.secondary.opacity(0.1))
                     .frame(width: 32, height: 32)
+                    .shimmer(isAnimating: isAnimating)
                 
                 Spacer()
                 
                 Circle()
-                    .fill(ShimmerView())
+                    .fill(Color.secondary.opacity(0.1))
                     .frame(width: 40, height: 40)
+                    .shimmer(isAnimating: isAnimating)
             }
             
             // Content
             VStack(alignment: .leading, spacing: 8) {
-                Rectangle()
-                    .fill(ShimmerView())
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(Color.secondary.opacity(0.1))
                     .frame(height: 14)
-                    .cornerRadius(4)
+                    .shimmer(isAnimating: isAnimating)
                 
-                Rectangle()
-                    .fill(ShimmerView())
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(Color.secondary.opacity(0.1))
                     .frame(height: 12)
-                    .cornerRadius(4)
+                    .shimmer(isAnimating: isAnimating)
                 
-                Rectangle()
-                    .fill(ShimmerView())
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(Color.secondary.opacity(0.1))
                     .frame(height: 10)
-                    .cornerRadius(4)
+                    .shimmer(isAnimating: isAnimating)
                     .frame(width: 60)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -156,32 +227,35 @@ struct ShimmerFavoriteCard: View {
     }
 }
 
-struct ShimmerFavoriteListItem: View {
+struct FavoriteListItemShimmerView: View {
+    var isAnimating: Bool = true
+    
     var body: some View {
         HStack(spacing: 16) {
             // User avatar shimmer
             VStack(alignment: .center, spacing: 4) {
                 Circle()
-                    .fill(ShimmerView())
+                    .fill(Color.secondary.opacity(0.1))
                     .frame(width: 48, height: 48)
+                    .shimmer(isAnimating: isAnimating)
                 
-                Rectangle()
-                    .fill(ShimmerView())
+                RoundedRectangle(cornerRadius: 5)
+                    .fill(Color.secondary.opacity(0.1))
                     .frame(width: 30, height: 10)
-                    .cornerRadius(5)
+                    .shimmer(isAnimating: isAnimating)
             }
             
             // Content shimmer
             VStack(alignment: .leading, spacing: 8) {
-                Rectangle()
-                    .fill(ShimmerView())
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(Color.secondary.opacity(0.1))
                     .frame(height: 18)
-                    .cornerRadius(4)
+                    .shimmer(isAnimating: isAnimating)
                 
-                Rectangle()
-                    .fill(ShimmerView())
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(Color.secondary.opacity(0.1))
                     .frame(height: 16)
-                    .cornerRadius(4)
+                    .shimmer(isAnimating: isAnimating)
                     .frame(width: UIScreen.main.bounds.width * 0.5)
                 
                 Spacer()
@@ -190,8 +264,9 @@ struct ShimmerFavoriteListItem: View {
             
             // Heart button shimmer
             Circle()
-                .fill(ShimmerView())
+                .fill(Color.secondary.opacity(0.1))
                 .frame(width: 40, height: 40)
+                .shimmer(isAnimating: isAnimating)
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 12)
@@ -207,12 +282,61 @@ struct ShimmerFavoriteListItem: View {
     }
 }
 
-#Preview {
-    VStack(spacing: 16) {
-        ShimmerPostCard()
-        ShimmerPostCard()
-        ShimmerPostCard()
+// MARK: - Legacy Shimmer Components (for backward compatibility)
+struct ShimmerPostCard: View {
+    var body: some View {
+        PostCardShimmerView()
     }
-    .padding()
+}
+
+struct ShimmerFavoriteCard: View {
+    var body: some View {
+        FavoriteCardShimmerView()
+    }
+}
+
+struct ShimmerFavoriteListItem: View {
+    var body: some View {
+        FavoriteListItemShimmerView()
+    }
+}
+
+// MARK: - Preview
+#Preview("Posts Shimmer") {
+    ShimmerView()
+        .background(Color(.systemGray6))
+}
+
+#Preview("Favorites Grid Shimmer") {
+    FavoritesShimmerView(selectedLayout: .grid)
+        .background(
+            LinearGradient(
+                colors: [Color(.systemGray6), Color(.systemGray5)],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        )
+}
+
+#Preview("Favorites List Shimmer") {
+    FavoritesShimmerView(selectedLayout: .list)
+        .background(
+            LinearGradient(
+                colors: [Color(.systemGray6), Color(.systemGray5)],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        )
+}
+
+#Preview("Individual Components") {
+    ScrollView {
+        VStack(spacing: 16) {
+            PostCardShimmerView()
+            FavoriteCardShimmerView()
+            FavoriteListItemShimmerView()
+        }
+        .padding()
+    }
     .background(Color(.systemGray6))
 }

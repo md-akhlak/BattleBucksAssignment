@@ -10,6 +10,7 @@ import SwiftUI
 struct PostsListView: View {
     @EnvironmentObject var viewModel: PostsViewModel
     @State private var selectedPost: Post?
+    @State private var hasAppeared: Bool = false
     
     var body: some View {
         NavigationStack {
@@ -21,8 +22,17 @@ struct PostsListView: View {
                 searchBar
                 
                 // Content
-                if viewModel.isLoading {
+                if viewModel.isLoading || (!hasAppeared && viewModel.posts.isEmpty) {
                     loadingView
+                } else if viewModel.isRefreshing {
+                    // Show shimmer during refresh
+                    VStack {
+                        loadingView
+                        Text("Refreshing posts...")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .padding(.top, 16)
+                    }
                 } else if let errorMessage = viewModel.errorMessage {
                     errorView(errorMessage)
                 } else {
@@ -36,6 +46,9 @@ struct PostsListView: View {
             .navigationDestination(item: $selectedPost) { post in
                 PostDetailView(post: post)
                     .environmentObject(viewModel)
+            }
+            .onAppear {
+                hasAppeared = true
             }
         }
     }
@@ -82,6 +95,7 @@ struct PostsListView: View {
             .padding(.bottom, 100) // Space for tab bar
         }
         .refreshable {
+            print("🔄 Pull-to-refresh triggered in PostsListView loadingView")
             await viewModel.refreshPosts()
         }
         .background(Color(.systemGray6))
@@ -113,6 +127,7 @@ struct PostsListView: View {
             .padding(.top, 100)
         }
         .refreshable {
+            print("🔄 Pull-to-refresh triggered in PostsListView errorView")
             await viewModel.refreshPosts()
         }
     }
@@ -125,51 +140,6 @@ struct PostsListView: View {
                         selectedPost = post
                     }
                     .environmentObject(viewModel)
-                    .onAppear {
-                        // Load more posts when reaching the trigger point
-                        if viewModel.shouldLoadMore(for: post) {
-                            Task {
-                                await viewModel.loadMorePosts()
-                            }
-                        }
-                    }
-                }
-                
-                // Loading indicator for pagination
-                if viewModel.isLoadingMore {
-                    VStack(spacing: 12) {
-                        ForEach(0..<3, id: \.self) { _ in
-                            ShimmerPostCard()
-                        }
-                    }
-                    .padding(.vertical, 20)
-                }
-                
-                // Pagination error with retry
-                if let paginationError = viewModel.paginationError {
-                    VStack(spacing: 12) {
-                        Image(systemName: "exclamationmark.triangle")
-                            .font(.system(size: 24))
-                            .foregroundColor(.orange)
-                        
-                        Text("Failed to load more posts")
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundColor(.primary)
-                        
-                        Text(paginationError)
-                            .font(.system(size: 14))
-                            .foregroundColor(.secondary)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal)
-                        
-                        Button("Retry") {
-                            Task {
-                                await viewModel.retryPagination()
-                            }
-                        }
-                        .buttonStyle(.borderedProminent)
-                    }
-                    .padding(.vertical, 20)
                 }
             }
             .padding(.horizontal, 16)
@@ -177,6 +147,7 @@ struct PostsListView: View {
             .padding(.bottom, 100) // Space for tab bar
         }
         .refreshable {
+            print("🔄 Pull-to-refresh triggered in PostsListView postsList")
             await viewModel.refreshPosts()
         }
         .background(Color(.systemGray6))
@@ -270,4 +241,3 @@ struct PostCardView: View {
     PostsListView()
         .environmentObject(PostsViewModel())
 }
-

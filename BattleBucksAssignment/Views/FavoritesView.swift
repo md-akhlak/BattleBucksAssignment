@@ -26,24 +26,12 @@ struct FavoritesView: View {
         }
     }
     
-    var filteredFavorites: [Post] {
-        if searchText.isEmpty {
-            return viewModel.favoritePosts
-        } else {
-            return viewModel.favoritePosts.filter { post in
-                post.title.localizedCaseInsensitiveContains(searchText) ||
-                post.body.localizedCaseInsensitiveContains(searchText)
-            }
-        }
-    }
     
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                // Enhanced Header
                 headerView
                 
-                // Search Bar (conditional)
                 if showSearchBar {
                     searchBar
                 }
@@ -51,6 +39,15 @@ struct FavoritesView: View {
                 // Content
                 if viewModel.isLoading || (!hasAppeared && viewModel.favoritePosts.isEmpty) {
                     loadingView
+                } else if viewModel.isRefreshing {
+                    // Show shimmer during refresh
+                    VStack {
+                        FavoritesShimmerView(selectedLayout: selectedLayout)
+                        Text("Refreshing favorites...")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .padding(.top, 16)
+                    }
                 } else if viewModel.favoritePosts.isEmpty {
                     emptyStateView
                 } else if filteredFavorites.isEmpty {
@@ -72,6 +69,17 @@ struct FavoritesView: View {
             }
             .onAppear {
                 hasAppeared = true
+            }
+        }
+    }
+    
+    var filteredFavorites: [Post] {
+        if searchText.isEmpty {
+            return viewModel.favoritePosts
+        } else {
+            return viewModel.favoritePosts.filter { post in
+                post.title.localizedCaseInsensitiveContains(searchText) ||
+                post.body.localizedCaseInsensitiveContains(searchText)
             }
         }
     }
@@ -173,33 +181,11 @@ struct FavoritesView: View {
     }
     
     private var loadingView: some View {
-        ScrollView {
-            if selectedLayout == .grid {
-                LazyVGrid(columns: [
-                    GridItem(.flexible(), spacing: 16),
-                    GridItem(.flexible(), spacing: 16)
-                ], spacing: 16) {
-                    ForEach(0..<10, id: \.self) { _ in
-                        ShimmerFavoriteCard()
-                    }
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 24)
-                .padding(.bottom, 100)
-            } else {
-                LazyVStack(spacing: 16) {
-                    ForEach(0..<10, id: \.self) { _ in
-                        ShimmerFavoriteListItem()
-                    }
-                }
-                .padding(.horizontal, 16)
-                .padding(.top, 24)
-                .padding(.bottom, 100)
+        FavoritesShimmerView(selectedLayout: selectedLayout)
+            .refreshable {
+                print("🔄 Pull-to-refresh triggered in FavoritesView loadingView")
+                await viewModel.refreshPosts()
             }
-        }
-        .refreshable {
-            await viewModel.refreshPosts()
-        }
     }
     
     private var emptyStateView: some View {
@@ -238,6 +224,7 @@ struct FavoritesView: View {
             .padding(.top, 100)
         }
         .refreshable {
+            print("🔄 Pull-to-refresh triggered in FavoritesView")
             await viewModel.refreshPosts()
         }
     }
@@ -262,6 +249,7 @@ struct FavoritesView: View {
             .padding(.top, 100)
         }
         .refreshable {
+            print("🔄 Pull-to-refresh triggered in FavoritesView")
             await viewModel.refreshPosts()
         }
     }
@@ -276,6 +264,7 @@ struct FavoritesView: View {
             }
         }
         .refreshable {
+            print("🔄 Pull-to-refresh triggered in FavoritesView")
             await viewModel.refreshPosts()
         }
     }
