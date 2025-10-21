@@ -32,7 +32,7 @@ This app follows the **MVVM (Model-View-ViewModel)** pattern:
 ### Installation Steps
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/BattleBucksAssignment.git
+   git clone https://github.com/md-akhlak/BattleBucksAssignment.git
    cd BattleBucksAssignment
    ```
 
